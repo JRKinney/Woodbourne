@@ -1,6 +1,12 @@
 import numpy as np
+import pandas as pd
 
+
+# Fixes
+# 1) Investigate the income numbers becasue they look too big
+# 2) Take into account the varying growth rates (right now you assumed expenses grow at the same rate)
 # Inputs
+capRate = .04
 ###############   Cost Schedule   ##############
 # Calculate lease up and stabilized expenses
 LeaseUp_Annual_ExpensePerUnit = -4838.96  # Calculated from sum in Excel
@@ -60,10 +66,6 @@ def StabilizedRentAnnualFunction(
            StabilizedRentAnnual_Base_Storage * StorageGrowthRate ** yearPastStabilizedCommencement
     return rent
 
-
-# Calculate sales proceeds
-
-
 # Basic
 CostSchedule = dict(LandAquisitionCost=-10000000, SoftCosts=-11000000, HardCosts=-53000000, FinancingFees=-1000000,
                     InterestReserve=-8000000)
@@ -71,33 +73,42 @@ CostSchedule = dict(LandAquisitionCost=-10000000, SoftCosts=-11000000, HardCosts
 ConstructionLength = 27
 LeaseUpLength = 12
 StabilizedLength = 61
-CostsTimeline2a = [CostSchedule['LandAquisitionCost'] + CostSchedule['SoftCosts'] + CostSchedule['FinancingFees']]
+IncomeTimeline2a = [CostSchedule['LandAquisitionCost'] + CostSchedule['SoftCosts'] + CostSchedule['FinancingFees']]
 for i in range(ConstructionLength):
-    CostsTimeline2a.append(CostSchedule['HardCosts'] / ConstructionLength)
+    IncomeTimeline2a.append(CostSchedule['HardCosts'] / ConstructionLength)
 
 for i in range(LeaseUpLength):
-    CostsTimeline2a.append(LeaseUpExpenseAnnual/12 + LeaseUpRentAnnual/12)
+    IncomeTimeline2a.append(LeaseUpExpenseAnnual/12 + LeaseUpRentAnnual/12)
 
+month = 1  # A counter to tell when we have reached one year
+year = 0
 for i in range(StabilizedLength):
-    CostsTimeline2a.append(StabilizedExpenseAnnualFunction(i) + st)
+    if month == 13:
+        month = 1
+        year = year + 1
+    IncomeTimeline2a.append(StabilizedExpenseAnnualFunction(year) + StabilizedRentAnnualFunction(year)) # Need to make annual increases
+    month = month + 1
 
+# Sale proceeds (does the sale happen at the start of the last month? Do we get pad rent the last month?
+annualNOI = np.array(IncomeTimeline2a[-12:]).sum()
+saleAmount = annualNOI/capRate
+IncomeTimeline2a[-1] = IncomeTimeline2a[-1] + saleAmount
+
+IncomeTimeline2a_Series = pd.Series(IncomeTimeline2a)
 ###############   Timeline   ##############
 LandAquisition = dict(CostsDeployed=CostSchedule['LandAquisitionCost'], IncomeRecieved=0, Expenses=0,
                       Period=list(range(1, 2)), Notes="")
 PreConstruction = dict(CostsDeployed=CostSchedule['SoftCosts'] + CostSchedule['FinancingFees'], IncomeRecieved=0,
-                       Expenses=0, Period=list(range(1, 2)),
-                       Notes="")
+                       Expenses=0, Period=list(range(1, 2)), Notes="")
 Construction = dict(CostsDeployed=CostSchedule['HardCosts'], IncomeRecieved=0, Expenses=0, Period=list(range(2, 29)),
                     Notes="Costs deployed evenly during period")
 LeaseUp = dict(CostsDeployed=0, IncomeRecieved=CostSchedule['LeaseUpRent'], Expenses=LeaseUpExpenses,
-               Period=list(range(29, 41)),
-               Notes="")
+               Period=list(range(29, 41)), Notes="")
 FullyStabilized = dict(CostsDeployed=, IncomeRecieved=StabilizedRent, Expenses=StabilizedExpenses,
                        Period=list(range(41, 42)), Notes="")
 Sale = dict(CostsDeployed=0, IncomeRecieved=SaleProceeds, Expenses=0, Period=list(range(41, 42)), Notes="")
 Timeline = dict(LandAquisition=LandAquisition, PreConstruction=PreConstruction, Contruction=Construction,
-                LeaseUp=LeaseUp
-                , FullyStabilized=FullyStabilized, Sale=Sale)
+                LeaseUp=LeaseUp, FullyStabilized=FullyStabilized, Sale=Sale)
 
 ###############   Exit Assumptions   ##############
 
