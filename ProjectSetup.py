@@ -21,7 +21,6 @@ ConstructionLength2b = 27  # The length (in months) of the construction period
 LeaseUpLength2b = 12  # The length (in months) of the lease up period
 StabilizedLength2b = 61  # The length (in months) of the lease up period
 
-
 #######################################################################################################################
 # Calculate lease up and stabilized expenses
 LeaseUp_Annual_ExpensePerUnit = -4838.96  # Calculated from sum in Excel of all of the expenses. There is no growth in
@@ -79,34 +78,36 @@ StabilizedRentAnnual_Base_Units = (StabilizedRental_Monthly_IncomePerUnitAve * U
 StabilizedRentAnnual_Base_Parking = (StabilizedParking_Monthly_IncomePerStall * Stalls) * 12
 StabilizedRentAnnual_Base_Storage = (StabilizedStorage_Monthly_IncomePerLocker * Lockers) * 12
 
+
 # Define a function that calculates the annual expense given the year. Takes into account all of the expenses and their
 # growth rates. Raises the growth rate to the power of 'years past stabilized commencement'
 def StabilizedExpenseAnnualFunction(yearPastStabilizedCommencement):
-    expenseA = Stabilized_Annual_ExpensePerUnitA * Units * (Stabilized_Annual_GrowthRateA ** yearPastStabilizedCommencement)
+    expenseA = Stabilized_Annual_ExpensePerUnitA * Units * (
+                Stabilized_Annual_GrowthRateA ** yearPastStabilizedCommencement)
     expenseB = Stabilized_Annual_ExpensePerUnitB * Units * (
-                Stabilized_Annual_GrowthRateB ** yearPastStabilizedCommencement)
+            Stabilized_Annual_GrowthRateB ** yearPastStabilizedCommencement)
     expenseC = Stabilized_Annual_ExpensePerUnitC * Units * (
-                Stabilized_Annual_GrowthRateC ** yearPastStabilizedCommencement)
+            Stabilized_Annual_GrowthRateC ** yearPastStabilizedCommencement)
     expenseD = Stabilized_Annual_ExpensePerUnitD * Units * (
-                Stabilized_Annual_GrowthRateD ** yearPastStabilizedCommencement)
+            Stabilized_Annual_GrowthRateD ** yearPastStabilizedCommencement)
     expenseE = Stabilized_Annual_ExpensePerUnitE * Units * (
-                Stabilized_Annual_GrowthRateE ** yearPastStabilizedCommencement)
+            Stabilized_Annual_GrowthRateE ** yearPastStabilizedCommencement)
     expenseF = Stabilized_Annual_ExpensePerUnitF * Units * (
-                Stabilized_Annual_GrowthRateF ** yearPastStabilizedCommencement)
+            Stabilized_Annual_GrowthRateF ** yearPastStabilizedCommencement)
     expenseG = Stabilized_Annual_ExpensePerUnitG * Units * (
-                Stabilized_Annual_GrowthRateG ** yearPastStabilizedCommencement)
+            Stabilized_Annual_GrowthRateG ** yearPastStabilizedCommencement)
     expenseH = Stabilized_Annual_ExpensePerUnitH * Units * (
-                Stabilized_Annual_GrowthRateH ** yearPastStabilizedCommencement)
+            Stabilized_Annual_GrowthRateH ** yearPastStabilizedCommencement)
     expenseI = Stabilized_Annual_ExpensePerUnitI * Units * (
-                Stabilized_Annual_GrowthRateI ** yearPastStabilizedCommencement)
+            Stabilized_Annual_GrowthRateI ** yearPastStabilizedCommencement)
     expenseJ = Stabilized_Annual_ExpensePerUnitJ * Units * (
-                Stabilized_Annual_GrowthRateJ ** yearPastStabilizedCommencement)
+            Stabilized_Annual_GrowthRateJ ** yearPastStabilizedCommencement)
     expenseK = Stabilized_Annual_ExpensePerUnitK * Units * (
-                Stabilized_Annual_GrowthRateK ** yearPastStabilizedCommencement)
+            Stabilized_Annual_GrowthRateK ** yearPastStabilizedCommencement)
     expenseL = Stabilized_Annual_ExpensePerUnitL * Units * (
-                Stabilized_Annual_GrowthRateL ** yearPastStabilizedCommencement)
+            Stabilized_Annual_GrowthRateL ** yearPastStabilizedCommencement)
     expenseM = Stabilized_Annual_ExpensePerUnitM * Units * (
-                Stabilized_Annual_GrowthRateM ** yearPastStabilizedCommencement)
+            Stabilized_Annual_GrowthRateM ** yearPastStabilizedCommencement)
     expense = sum([expenseA, expenseB, expenseC, expenseD, expenseE, expenseF, expenseG, expenseH, expenseI, expenseJ,
                    expenseK, expenseL, expenseM])
     return expense
@@ -119,7 +120,7 @@ def StabilizedRentAnnualFunction(
     rent = StabilizedRentAnnual_Base_Units * RentGrowthRate ** yearPastStabilizedCommencement + \
            StabilizedRentAnnual_Base_Parking * ParkingGrowthRate ** yearPastStabilizedCommencement + \
            StabilizedRentAnnual_Base_Storage * StorageGrowthRate ** yearPastStabilizedCommencement
-    return rent*(1 - StabilizedVacancyRate)
+    return rent * (1 - StabilizedVacancyRate)
 
 
 #######################################################################################################################
@@ -139,11 +140,11 @@ for i in range(ConstructionLength2b):
 
 # Add the lease up period
 for i in range(LeaseUpLength2a):
-    CashFlowTimeline2a.append(LeaseUpExpenseAnnual/12 + LeaseUpRentAnnual/12)  # Divide by 12 to get monthly revenue
+    CashFlowTimeline2a.append(LeaseUpExpenseAnnual / 12 + LeaseUpRentAnnual / 12)  # Divide by 12 to get monthly revenue
 
 # Repeat for timeline b
 for i in range(LeaseUpLength2b):
-    CashFlowTimeline2b.append(LeaseUpExpenseAnnual/12 + LeaseUpRentAnnual/12)  # Divide by 12 to get monthly revenue
+    CashFlowTimeline2b.append(LeaseUpExpenseAnnual / 12 + LeaseUpRentAnnual / 12)  # Divide by 12 to get monthly revenue
 
 # Add the stabilized period
 month = 1  # A counter to tell when we have reached one year
@@ -154,7 +155,7 @@ for i in range(StabilizedLength2a):
         month = 1
         year = year + 1
     # Divide by 12 to get monthly revenue
-    CashFlowTimeline2a.append(StabilizedExpenseAnnualFunction(year)/12 + StabilizedRentAnnualFunction(year)/12)
+    CashFlowTimeline2a.append(StabilizedExpenseAnnualFunction(year) / 12 + StabilizedRentAnnualFunction(year) / 12)
     month = month + 1
 
 # Repeat for timeline b
@@ -166,24 +167,184 @@ for i in range(StabilizedLength2b):
         month = 1
         year = year + 1
     # Divide by 12 to get monthly revenue
-    CashFlowTimeline2b.append(StabilizedExpenseAnnualFunction(year)/12 + StabilizedRentAnnualFunction(year)/12)
+    CashFlowTimeline2b.append(StabilizedExpenseAnnualFunction(year) / 12 + StabilizedRentAnnualFunction(year) / 12)
     month = month + 1
 
 # Add the sale proceeds (does the sale happen at the start of the last month? Do we get pad rent the last month?)
-annualNOI2a = CashFlowTimeline2a[-1]*12  # Annual NOI is the previous month's income times 12
-annualNOI2b = CashFlowTimeline2b[-1]*12  # Annual NOI is the previous month's income times 12
+annualNOI2a = CashFlowTimeline2a[-1] * 12  # Annual NOI is the previous month's income times 12
+annualNOI2b = CashFlowTimeline2b[-1] * 12  # Annual NOI is the previous month's income times 12
 
-saleAmount2a = annualNOI2a/capRate  # The sale amount is the NOI divided by the cap rate
-saleAmount2b = annualNOI2b/capRate  # The sale amount is the NOI divided by the cap rate
+saleAmount2a = annualNOI2a / capRate  # The sale amount is the NOI divided by the cap rate
+saleAmount2b = annualNOI2b / capRate  # The sale amount is the NOI divided by the cap rate
 
 CashFlowTimeline2a[-1] = CashFlowTimeline2a[-1] + saleAmount2a
 CashFlowTimeline2b[-1] = CashFlowTimeline2b[-1] + saleAmount2b
 
 CashFlowTimeline2a = pd.Series(CashFlowTimeline2a)
 CashFlowTimeline2b = pd.Series(CashFlowTimeline2b)
-Months2a = np.arange(CashFlowTimeline2a.__len__())+1
-Months2b = np.arange(CashFlowTimeline2b.__len__())+1
+Months2a = np.arange(CashFlowTimeline2a.__len__()) + 1
+Months2b = np.arange(CashFlowTimeline2b.__len__()) + 1
 CashFlowSchedule2a = pd.DataFrame(dict(CashFlow=CashFlowTimeline2a, Month=Months2a))
 CashFlowSchedule2b = pd.DataFrame(dict(CashFlow=CashFlowTimeline2b, Month=Months2b))
 
+########################################################################################################################
+# Task 2
+# Calculate the budget (negative the costs)
+Budget = sum([CostSchedule['LandAquisitionCost'], CostSchedule['SoftCosts'], CostSchedule['HardCosts'],
+              CostSchedule['FinancingFees'], CostSchedule['InterestReserve']]) * (-1)
+# Construction Loan
+# Interest Only Loan, maturity date (principal repayment) occurs upon stabilization of the property. Interest costs
+# funded through Interest Reserve
+Construction_Attachment = 0
+Construction_Detachment = 0.75
+Construction_InterestRate = .045
+Construction_Amount = Budget * (Construction_Detachment - Construction_Attachment)
+
+# Mezzanine Loan
+# Interest Only Loan, maturity date (principal repayment) occurs upon sale of the property. Interest costs accrue until
+# the property is fully stabilized, at which point all excess proceeds are used to fund any outstanding interest and
+# principle. All outstanding interest and principle are payable in full at the maturity date
+Mezzanine_Attachment = .75
+Mezzanine_Detachment = .875
+Mezzanine_InterestRate = 0.12
+Mezzanine_Amount = Budget * (Mezzanine_Detachment - Mezzanine_Attachment)
+
+# Equity
+# Receives all excess cash flow and must fund all shortfalls
+Equity_Attachment = .875
+Equity_Detachment = 1
+Equity_Amount = Budget * (Equity_Detachment - Equity_Attachment)
+
+# Notes to myself
+# Payments
+# Up to Stabilized:
+#   Construction gets annual interest = Budget*(Construction_Detachment - Construction_Attachment) *
+#       Construction_InterestRate
+#   Mezzanine accrues interest = Budget * (Mezzanine_Detachment - Mezzanine_Attachment) * Mezzanine_InterestRate
+#   Equity gets all excess and funds all shortfalls
+
+ProjectCash2a = np.zeros(CashFlowSchedule2a['Month'].__len__())
+ProjectCash2b = np.zeros(CashFlowSchedule2b['Month'].__len__())
+ConstructionCash2a = np.zeros(CashFlowSchedule2a['Month'].__len__())
+ConstructionCash2b = np.zeros(CashFlowSchedule2b['Month'].__len__())
+MezzanineCash2a = np.zeros(CashFlowSchedule2a['Month'].__len__())
+MezzanineCash2b = np.zeros(CashFlowSchedule2b['Month'].__len__())
+EquityCash2a = np.zeros(CashFlowSchedule2a['Month'].__len__())
+EquityCash2b = np.zeros(CashFlowSchedule2b['Month'].__len__())
+
+# Track whether the entirety of the capital source has been used
+EquityUsed = False
+MezzUsed = False
+ConstructionUsed = False
+
+# Make a cashflow timeline for Project cash, Construction, Mezzanine and Equity
+# Starting cash comes from equity. Mezz debt is gathered as needed until it is maxed out. Then the construction loan is
+# pulled from
+ProjectCash2a[0] = Equity_Amount + CashFlowSchedule2a['CashFlow'][0]
+ProjectCash2b[0] = Equity_Amount + CashFlowSchedule2a['CashFlow'][0]
+
+# Reflect the negative cash flow for Equity investors
+EquityCash2a[0] = (-1) * Equity_Amount
+EquityCash2b[0] = (-1) * Equity_Amount
+
+# If Equity has not paid for the amount needed, pull from mezz debt. Pull at max the mezzanine amount
+if ProjectCash2a[0] < 0:
+    MezzanineCash2a[0] = max(ProjectCash2a[0], Mezzanine_Amount*(-1))
+    ProjectCash2a[0] = ProjectCash2a[0] - MezzanineCash2a[0]
+
+# If the amount is still not covered, pull from the construction loan
+if ProjectCash2a[0] < 0:
+    ConstructionCash2a[0] = max(ProjectCash2a[0], Construction_Amount*(-1))
+    ProjectCash2a[0] = ProjectCash2a[0] - ConstructionCash2a[0]
+
+# Repeat for 2b
+if ProjectCash2b[0] < 0:
+    MezzanineCash2b[0] = max(ProjectCash2b[0], Mezzanine_Amount*(-1))
+    ProjectCash2b[0] = ProjectCash2b[0] - MezzanineCash2b[0]
+
+# If the amount is still not covered, pull from the construction loan
+if ProjectCash2b[0] < 0:
+    ConstructionCash2b[0] = max(ProjectCash2b[0], Construction_Amount*(-1))
+    ProjectCash2b[0] = ProjectCash2b[0] - ConstructionCash2b[0]
+
+# There is initially no mezz debt interest accrued
+Mezzanine_InterestedAccrued2a = 0
+Mezzanine_InterestedAccrued2b = 0
+
+
+# For the period up to the stabilized period, use cash to build the project. Draw from loans as needed, taking most
+# junior loans first. Accrue mezz debt interest and pay construction loan interest
+for i in range(1, LeaseUpLength2a + ConstructionLength2a + 1):
+    # Augment the project cash by the amount spent/gained
+    ProjectCash2a[i] = ProjectCash2a[i - 1] + CashFlowSchedule2a['CashFlow'][i]
+    # Pull cash as necessary from mezz debt
+    if ProjectCash2a[i] < 0 and MezzUsed = False:
+        MezzanineCash2a[i] = max(ProjectCash2a[i], (Mezzanine_Amount-MezzanineCash2a[i-1])*(-1))
+        ProjectCash2a[i] = ProjectCash2a[i] - MezzanineCash2a[i]
+        if MezzanineCash2a[i] == Mezzanine_Amount*(-1):
+            MezzUsed = True
+
+    # If mezz debt has been all used up
+    if ProjectCash2a[i] < 0:
+        ConstructionCash2a[0] = max(ProjectCash2a[0], Construction_Amount * (-1))
+        ProjectCash2a[0] = ProjectCash2a[0] - ConstructionCash2a[0]
+    # Record the amount of interest accrued by the mezzanine loan but don't pay it yet
+    Mezzanine_InterestedAccrued2a = Mezzanine_InterestedAccrued2a + Mezzanine_Amount * Mezzanine_InterestRate / 12
+    # Give the interest to the construction loaner
+    ConstructionCash2a[i] = Construction_Amount * Construction_InterestRate / 12
+
+# Once this period has completed, the property is stabilized and the construction loan principle will be paid back
+# Excess cash will be used to fund the interest accrued by the mezzanine loan. Excess cash goes to the equity holders
+
+# In 2a, the sale happens at this point too, so the mezzanine principle gets paid back and all extra cash goes to the
+# equity holder
+i = LeaseUpLength2a + ConstructionLength2a + 1
+# The Mezz debt accrues one more month
+Mezzanine_InterestedAccrued2a = Mezzanine_InterestedAccrued2a + Mezzanine_Amount * Mezzanine_InterestRate / 12
+# Then the project cash receives the sale and final month's income. The construction interest for the last month and the
+#  principle are paid off. The mezz debt accrued interest and principle are paid off.
+ProjectCash2a[i] = ProjectCash2a[i-1]+CashFlowSchedule2a['CashFlow'][i]-(Construction_Amount*Construction_InterestRate/12) - Construction_Amount - (Mezzanine_InterestedAccrued2a + Mezzanine_Amount)
+# If there is enough cash to pay back construction and mezz debt, do so
+if ProjectCash2a[i] > 0:
+    ConstructionCash2a[i] = Construction_Amount*Construction_InterestRate/1 + Construction_Amount
+    MezzanineCash2a[i] = Mezzanine_Amount + Mezzanine_InterestedAccrued2a
+# elif ProjectCash2a[i] > Do this for the bigger losses
+EquityCash2a[i] = ProjectCash2a[i]
+# ProjectCash2a[i] = ProjectCash2a[i] - EquityCash2a
+
+
+# For the period up to the stabilized period, use cash to build the project and pay construction loan. Mezzanine loan
+for i in range(1, LeaseUpLength2b + ConstructionLength2b + 1):
+    # Augment the project cash by the amount spent/gained and the interest paid. In the lease up an construction period,
+    # the only interest paid is on the construction loan
+    ProjectCash2b[i] = ProjectCash2b[i - 1] + CashFlowSchedule2b['CashFlow'][
+        i] - Construction_Amount * Construction_InterestRate / 12
+    # Record the amount of interest accrued by the mezzanine loan but don't pay it yet
+    Mezzanine_InterestedAccrued2b = Mezzanine_InterestedAccrued2b + Mezzanine_Amount * Mezzanine_InterestRate / 12
+    # Give the interest to the construction loaner
+    ConstructionCash2b[i] = Construction_Amount * Construction_InterestRate / 12
+
+# Once this period has completed, the property is stabilized and the construction loan principle will be paid back
+# Excess cash will be used to fund the interest accrued by the mezzanine loan. Excess cash goes to the equity holders
+
+
+
+
+
+
+# In 2a, the sale happens at this point too, so the mezzanine principle gets paid back and all extra cash goes to the
+# equity holder
+i = LeaseUpLength2a + ConstructionLength2a + 1
+# The Mezz debt accrues one more month
+Mezzanine_InterestedAccrued2b = Mezzanine_InterestedAccrued2b + Mezzanine_Amount * Mezzanine_InterestRate / 12
+# Then the project cash receives the sale and final month's income. The construction interest for the last month and the
+#  principle are paid off. The mezz debt accrued interest and principle are paid off.
+ProjectCash2a[i] = ProjectCash2a[i-1]+CashFlowSchedule2a['CashFlow'][i]-(Construction_Amount*Construction_InterestRate/12) - Construction_Amount - (Mezzanine_InterestedAccrued2b + Mezzanine_Amount)
+# If there is enough cash to pay back construction and mezz debt, do so
+if ProjectCash2a[i] > 0:
+    ConstructionCash2a[i] = Construction_Amount*Construction_InterestRate/1 + Construction_Amount
+    MezzanineCash2a[i] = Mezzanine_Amount + Mezzanine_InterestedAccrued2b
+# elif ProjectCash2a[i] > Do this for the bigger losses
+EquityCash2a[i] = ProjectCash2a[i]
+# ProjectCash2a[i] = ProjectCash2a[i] - EquityCash2a
 
