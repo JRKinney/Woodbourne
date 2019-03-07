@@ -225,17 +225,22 @@ Equity_Amount = Budget * (Equity_Detachment - Equity_Attachment)
 
 ProjectCash2a = np.zeros(CashFlowSchedule2a['Month'].__len__())
 ProjectCash2b = np.zeros(CashFlowSchedule2b['Month'].__len__())
-ConstructionCash2a = np.zeros(CashFlowSchedule2a['Month'].__len__())
-ConstructionCash2b = np.zeros(CashFlowSchedule2b['Month'].__len__())
+ConstructionPaid2a = np.zeros(CashFlowSchedule2a['Month'].__len__())
+ConstructionPaid2b = np.zeros(CashFlowSchedule2b['Month'].__len__())
+ConstructionReceived2a = np.zeros(CashFlowSchedule2a['Month'].__len__())
+ConstructionReceived2b = np.zeros(CashFlowSchedule2b['Month'].__len__())
 MezzanineCash2a = np.zeros(CashFlowSchedule2a['Month'].__len__())
 MezzanineCash2b = np.zeros(CashFlowSchedule2b['Month'].__len__())
 EquityCash2a = np.zeros(CashFlowSchedule2a['Month'].__len__())
 EquityCash2b = np.zeros(CashFlowSchedule2b['Month'].__len__())
 
 # Track whether the entirety of the capital source has been used
-EquityUsed = False
-MezzUsed = False
-ConstructionUsed = False
+EquityUsed2a = True
+MezzUsed2a = False
+ConstructionUsed2a = False
+EquityUsed2b = True
+MezzUsed2b = False
+ConstructionUsed2b = False
 
 # Make a cashflow timeline for Project cash, Construction, Mezzanine and Equity
 # Starting cash comes from equity. Mezz debt is gathered as needed until it is maxed out. Then the construction loan is
@@ -251,47 +256,72 @@ EquityCash2b[0] = (-1) * Equity_Amount
 if ProjectCash2a[0] < 0:
     MezzanineCash2a[0] = max(ProjectCash2a[0], Mezzanine_Amount*(-1))
     ProjectCash2a[0] = ProjectCash2a[0] - MezzanineCash2a[0]
+    if MezzanineCash2a[0] == Mezzanine_Amount * (-1):
+        MezzUsed2a = True
 
 # If the amount is still not covered, pull from the construction loan
 if ProjectCash2a[0] < 0:
-    ConstructionCash2a[0] = max(ProjectCash2a[0], Construction_Amount*(-1))
-    ProjectCash2a[0] = ProjectCash2a[0] - ConstructionCash2a[0]
+    ConstructionPaid2a[0] = max(ProjectCash2a[0], Construction_Amount*(-1))
+    ProjectCash2a[0] = ProjectCash2a[0] - ConstructionPaid2a[0]
+    if ConstructionPaid2a[0] == Construction_Amount * (-1):
+        ConstructionUsed2a = True
 
 # Repeat for 2b
 if ProjectCash2b[0] < 0:
     MezzanineCash2b[0] = max(ProjectCash2b[0], Mezzanine_Amount*(-1))
     ProjectCash2b[0] = ProjectCash2b[0] - MezzanineCash2b[0]
+    if MezzanineCash2b[0] == Mezzanine_Amount * (-1):
+        MezzUsed2b = True
+
 
 # If the amount is still not covered, pull from the construction loan
 if ProjectCash2b[0] < 0:
-    ConstructionCash2b[0] = max(ProjectCash2b[0], Construction_Amount*(-1))
-    ProjectCash2b[0] = ProjectCash2b[0] - ConstructionCash2b[0]
+    ConstructionPaid2b[0] = max(ProjectCash2b[0], Construction_Amount*(-1))
+    ProjectCash2b[0] = ProjectCash2b[0] - ConstructionPaid2b[0]
+    if ConstructionPaid2b[0] == Construction_Amount * (-1):
+        ConstructionUsed2b = True
+
 
 # There is initially no mezz debt interest accrued
-Mezzanine_InterestedAccrued2a = 0
-Mezzanine_InterestedAccrued2b = 0
+Mezzanine_InterestedAccrued2a = np.zeros(CashFlowSchedule2a['Month'].__len__())
+Mezzanine_InterestedAccrued2b = np.zeros(CashFlowSchedule2b['Month'].__len__())
 
 
 # For the period up to the stabilized period, use cash to build the project. Draw from loans as needed, taking most
 # junior loans first. Accrue mezz debt interest and pay construction loan interest
 for i in range(1, LeaseUpLength2a + ConstructionLength2a + 1):
-    # Augment the project cash by the amount spent/gained
-    ProjectCash2a[i] = ProjectCash2a[i - 1] + CashFlowSchedule2a['CashFlow'][i]
-    # Pull cash as necessary from mezz debt
-    if ProjectCash2a[i] < 0 and MezzUsed = False:
-        MezzanineCash2a[i] = max(ProjectCash2a[i], (Mezzanine_Amount-MezzanineCash2a[i-1])*(-1))
-        ProjectCash2a[i] = ProjectCash2a[i] - MezzanineCash2a[i]
-        if MezzanineCash2a[i] == Mezzanine_Amount*(-1):
-            MezzUsed = True
-
-    # If mezz debt has been all used up
-    if ProjectCash2a[i] < 0:
-        ConstructionCash2a[0] = max(ProjectCash2a[0], Construction_Amount * (-1))
-        ProjectCash2a[0] = ProjectCash2a[0] - ConstructionCash2a[0]
     # Record the amount of interest accrued by the mezzanine loan but don't pay it yet
-    Mezzanine_InterestedAccrued2a = Mezzanine_InterestedAccrued2a + Mezzanine_Amount * Mezzanine_InterestRate / 12
-    # Give the interest to the construction loaner
-    ConstructionCash2a[i] = Construction_Amount * Construction_InterestRate / 12
+    # This is calculated by adding the accrued interest to this point plus this months interest (on the loan and
+    # accrued interest)
+    Mezzanine_InterestedAccrued2a[i] = Mezzanine_InterestedAccrued2a[i-1] + (Mezzanine_InterestedAccrued2a[i-1] - MezzanineCash2a.sum()) * Mezzanine_InterestRate / 12
+    # Give the interest to the construction lender
+    ConstructionReceived2a[i] = ConstructionPaid2a.sum() * (-1) * Construction_InterestRate / 12
+    # Augment the project cash by the amount spent/gained from the site and interest
+    ProjectCash2a[i] = ProjectCash2a[i - 1] + CashFlowSchedule2a['CashFlow'][i] - ConstructionReceived2a[i]
+    # Pull cash as necessary from mezz debt
+    if ProjectCash2a[i] < 0 and not MezzUsed2a:
+        # Take at max the Mezzanine amount minus the amount used already (negative number so add)
+        MezzanineCash2a[i] = max(ProjectCash2a[i], (Mezzanine_Amount+MezzanineCash2a.sum())*(-1))
+        # Let the project cash reflect the amount taken from Mezz debt
+        ProjectCash2a[i] = ProjectCash2a[i] - MezzanineCash2a[i]
+        # If all the mezz debt was used, show that
+        if MezzanineCash2a[i].sum() == Mezzanine_Amount*(-1):
+            MezzUsed2a = True
+
+    # If mezz debt has been all used up, use construction debt
+    if ProjectCash2a[i] < 0 and not ConstructionUsed2a:
+        # Take at max the Construction amount minus the amount used already (negative number so add)
+        ConstructionPaid2a[i] = max(ProjectCash2a[i], (Construction_Amount + ConstructionPaid2a.sum())*(-1))
+        # Let the project cash reflect the amount taken from Construction debt
+        ProjectCash2a[i] = ProjectCash2a[i] - ConstructionPaid2a[i]
+        # If all the construction debt was used, show that
+        if ConstructionPaid2a[i].sum() == Construction_Amount * (-1):
+            ConstructionUsed2a = True
+
+    # If there is still a need for money, print out an error
+    if ProjectCash2a[i] < 0 and ConstructionUsed2a and MezzUsed2a:
+        print('All Cash Used up. ERROR')
+
 
 # Once this period has completed, the property is stabilized and the construction loan principle will be paid back
 # Excess cash will be used to fund the interest accrued by the mezzanine loan. Excess cash goes to the equity holders
@@ -299,18 +329,36 @@ for i in range(1, LeaseUpLength2a + ConstructionLength2a + 1):
 # In 2a, the sale happens at this point too, so the mezzanine principle gets paid back and all extra cash goes to the
 # equity holder
 i = LeaseUpLength2a + ConstructionLength2a + 1
-# The Mezz debt accrues one more month
-Mezzanine_InterestedAccrued2a = Mezzanine_InterestedAccrued2a + Mezzanine_Amount * Mezzanine_InterestRate / 12
+# The Mezz debt accrues one more month and construction gets 1 more month of interest
+Mezzanine_InterestedAccrued2a[i] = Mezzanine_InterestedAccrued2a[i-1] + (Mezzanine_InterestedAccrued2a[i-1] - MezzanineCash2a.sum()) * Mezzanine_InterestRate / 12
+ConstructionReceived2a[i] = ConstructionPaid2a.sum() * (-1) * Construction_InterestRate / 12
 # Then the project cash receives the sale and final month's income. The construction interest for the last month and the
 #  principle are paid off. The mezz debt accrued interest and principle are paid off.
-ProjectCash2a[i] = ProjectCash2a[i-1]+CashFlowSchedule2a['CashFlow'][i]-(Construction_Amount*Construction_InterestRate/12) - Construction_Amount - (Mezzanine_InterestedAccrued2a + Mezzanine_Amount)
-# If there is enough cash to pay back construction and mezz debt, do so
+ProjectCash2a[i] = ProjectCash2a[i-1] + CashFlowSchedule2a['CashFlow'][i] + ConstructionReceived2a[i] + ConstructionPaid2a.sum() - (Mezzanine_InterestedAccrued2a[i] - MezzanineCash2a.sum())
+# If there was enough cash to pay back construction and mezz debt, show that
 if ProjectCash2a[i] > 0:
-    ConstructionCash2a[i] = Construction_Amount*Construction_InterestRate/1 + Construction_Amount
-    MezzanineCash2a[i] = Mezzanine_Amount + Mezzanine_InterestedAccrued2a
-# elif ProjectCash2a[i] > Do this for the bigger losses
+    ConstructionReceived2a[i] = ConstructionPaid2a.sum() * (-1) * Construction_InterestRate / 12 - ConstructionPaid2a.sum()
+    MezzanineCash2a[i] = (-1)*MezzanineCash2a.sum() + Mezzanine_InterestedAccrued2a[i]
+
+# Equity takes the final cash
 EquityCash2a[i] = ProjectCash2a[i]
-# ProjectCash2a[i] = ProjectCash2a[i] - EquityCash2a
+ProjectCash2a[i] = ProjectCash2a[i] - EquityCash2a[i]
+
+# Calculate one cash flow for Construction lender
+ConstructionCash2a = ConstructionPaid2a + ConstructionReceived2a
+
+# Calculate MOICs
+ConstructionMOIC2a = ConstructionReceived2a.sum()/ConstructionPaid2a.sum()*(-1)
+MezzanineMOIC2a = MezzanineCash2a[i]/MezzanineCash2a[:-1].sum()*(-1)
+EquityMOIC2a = EquityCash2a[i]/EquityCash2a[:-1].sum()*(-1)
+
+# Calculate annual IRR. Cash flow is monthly, so annualize it here
+ConstructionIRR2a = (1+np.irr(ConstructionCash2a))**12 - 1
+MezzanineIRR2a = (1+np.irr(MezzanineCash2a))**12 - 1
+EquityIRR2a = (1+np.irr(EquityCash2a))**12 - 1
+
+
+
 
 
 # For the period up to the stabilized period, use cash to build the project and pay construction loan. Mezzanine loan
