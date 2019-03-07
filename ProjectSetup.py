@@ -215,6 +215,10 @@ Equity_Attachment = .875
 Equity_Detachment = 1
 Equity_Amount = Budget * (Equity_Detachment - Equity_Attachment)
 
+maxMortgageLTV = .75
+minMortgageDSCR = 1.2
+mortgageInterestRate = 0.03
+
 # Notes to myself
 # Payments
 # Up to Stabilized:
@@ -334,7 +338,7 @@ Mezzanine_InterestedAccrued2a[i] = Mezzanine_InterestedAccrued2a[i-1] + (Mezzani
 ConstructionReceived2a[i] = ConstructionPaid2a.sum() * (-1) * Construction_InterestRate / 12
 # Then the project cash receives the sale and final month's income. The construction interest for the last month and the
 #  principle are paid off. The mezz debt accrued interest and principle are paid off.
-ProjectCash2a[i] = ProjectCash2a[i-1] + CashFlowSchedule2a['CashFlow'][i] + ConstructionReceived2a[i] + ConstructionPaid2a.sum() - (Mezzanine_InterestedAccrued2a[i] - MezzanineCash2a.sum())
+ProjectCash2a[i] = ProjectCash2a[i-1] + CashFlowSchedule2a['CashFlow'][i] - ConstructionReceived2a[i] + ConstructionPaid2a.sum() - (Mezzanine_InterestedAccrued2a[i] - MezzanineCash2a.sum())
 # If there was enough cash to pay back construction and mezz debt, show that
 if ProjectCash2a[i] > 0:
     ConstructionReceived2a[i] = ConstructionPaid2a.sum() * (-1) * Construction_InterestRate / 12 - ConstructionPaid2a.sum()
@@ -363,4 +367,127 @@ MezzanineTotalProfit2a = MezzanineCash2a.sum()
 EquityTotalProfit2a = EquityCash2a.sum()
 
 
+#######################################################################################################################
+# 2b
+# For the period up to the stabilized period, use cash to build the project. Draw from loans as needed, taking most
+# junior loans first. Accrue mezz debt interest and pay construction loan interest
+for i in range(1, LeaseUpLength2b + ConstructionLength2b + 1):
+    # Record the amount of interest accrued by the mezzanine loan but don't pay it yet
+    # This is calculated by adding the accrued interest to this point plus this months interest (on the loan and
+    # accrued interest)
+    Mezzanine_InterestedAccrued2b[i] = Mezzanine_InterestedAccrued2b[i-1] + (Mezzanine_InterestedAccrued2b[i-1] - MezzanineCash2b.sum()) * Mezzanine_InterestRate / 12
+    # Give the interest to the construction lender
+    ConstructionReceived2b[i] = ConstructionPaid2b.sum() * (-1) * Construction_InterestRate / 12
+    # Augment the project cash by the amount spent/gained from the site and interest
+    ProjectCash2b[i] = ProjectCash2b[i - 1] + CashFlowSchedule2b['CashFlow'][i] - ConstructionReceived2b[i]
+    # Pull cash as necessary from mezz debt
+    if ProjectCash2b[i] < 0 and not MezzUsed2b:
+        # Take at max the Mezzanine amount minus the amount used already (negative number so add)
+        MezzanineCash2b[i] = max(ProjectCash2b[i], (Mezzanine_Amount+MezzanineCash2b.sum())*(-1))
+        # Let the project cash reflect the amount taken from Mezz debt
+        ProjectCash2b[i] = ProjectCash2b[i] - MezzanineCash2b[i]
+        # If all the mezz debt was used, show that
+        if MezzanineCash2b[i].sum() == Mezzanine_Amount*(-1):
+            MezzUsed2b = True
 
+    # If mezz debt has been all used up, use construction debt
+    if ProjectCash2b[i] < 0 and not ConstructionUsed2b:
+        # Take at max the Construction amount minus the amount used already (negative number so add)
+        ConstructionPaid2b[i] = max(ProjectCash2b[i], (Construction_Amount + ConstructionPaid2b.sum())*(-1))
+        # Let the project cash reflect the amount taken from Construction debt
+        ProjectCash2b[i] = ProjectCash2b[i] - ConstructionPaid2b[i]
+        # If all the construction debt was used, show that
+        if ConstructionPaid2b[i].sum() == Construction_Amount * (-1):
+            ConstructionUsed2b = True
+
+    # If there is still a need for money, print out an error
+    if ProjectCash2b[i] < 0 and ConstructionUsed2b and MezzUsed2b:
+        print('All Cash Used up. ERROR')
+
+
+# Once this period has completed, the property is stabilized and the construction loan principle will be paid back
+# Excess cash will be used to fund the interest accrued by the mezzanine loan. Excess cash goes to the equity holders
+
+# In 2b, this is when the refinancing happens so we need to calculate the right mortgage and pay off the construction
+i = LeaseUpLength2b + ConstructionLength2b + 1
+# The Mezz debt accrues one more month and construction gets 1 more month of interest
+Mezzanine_InterestedAccrued2b[i] = Mezzanine_InterestedAccrued2b[i-1] + (Mezzanine_InterestedAccrued2b[i-1] - MezzanineCash2b.sum()) * Mezzanine_InterestRate / 12
+ConstructionReceived2b[i] = ConstructionPaid2b.sum() * (-1) * Construction_InterestRate / 12
+# Then the project cash receives the sale and the month's income. The construction interest for the last month is paid
+ProjectCash2b[i] = ProjectCash2b[i-1] + CashFlowSchedule2b['CashFlow'][i] - ConstructionReceived2b[i]
+# Max Mortage is limited by max LTV and min DSCR
+mortgageMax = maxMortgageLTV * CashFlowSchedule2b['CashFlow'][i]*12/capRate
+# The neccesary mortgage is the amount needed to pay of the construction principle
+mortgageNeccesary = (-1)*ConstructionPaid2b.sum() - ProjectCash2b[i]
+# Confirm that this is allowable under the mortgage conditions
+if mortgageMax > mortgageNeccesary:
+    mortgageAmount = mortgageNeccesary
+else:
+    print('Neccesary Mortgage Not Allowable')
+
+# Confirm the DSCR is allowable
+DSCR = CashFlowSchedule2b['CashFlow'][i]/(mortgageAmount*mortageInterestRate/12)
+if DSCR < minMortgageDSCR:
+    print('DSCR = ' + str(DSCR) + '. The month is ' + str(i) + ' and we are in default.')
+
+# Take out mortgage and put it into the project cash
+mortgagePrinciple = mortgageAmount
+ProjectCash2b[i] = ProjectCash2b[i] + mortgagePrinciple
+
+# Pay off construction loan with the project cash
+ConstructionReceived2b[i] = (-1)*ConstructionPaid2b.sum()
+ProjectCash2b[i] = ProjectCash2b[i]-ConstructionReceived2b[i]
+
+
+
+
+
+
+
+fv = 0
+pv = 200000
+rate = 0.075 / 12
+nper = 15 * 12
+
+for per in range(nper):
+  principal = -np.ppmt(rate, per, nper, pv)
+  interest = -np.ipmt(rate, per, nper, pv)
+  print(principal, interest, principal + interest)
+
+
+
+
+# Loop, paying off mortgage and mezzanine debt during the stabilized period
+for i in range(StabilizedLength2b):
+    # Pay mortgage interest semi annually at .5*annual interest rate first because we don't want to default
+    # If not semi annual, then save up money for the semi annual payment =(mortgagePrinciple*mortgageInterestRate/6)
+    # Accrue mezzanine interest
+    # Pay mezzanine accrued interest second becasue mezz debt is 12% money
+    # Pay mezzanine principle
+    # Pay mortgage principle last because it is 4% money
+
+
+
+
+
+# Equity takes the final cash
+EquityCash2b[i] = ProjectCash2b[i]
+ProjectCash2b[i] = ProjectCash2b[i] - EquityCash2b[i]
+
+# Calculate one cash flow for Construction lender
+ConstructionCash2b = ConstructionPaid2b + ConstructionReceived2b
+
+# Calculate MOICs
+ConstructionMOIC2b = ConstructionReceived2b.sum()/ConstructionPaid2b.sum()*(-1)
+MezzanineMOIC2b = MezzanineCash2b[i]/MezzanineCash2b[:-1].sum()*(-1)
+EquityMOIC2b = EquityCash2b[i]/EquityCash2b[:-1].sum()*(-1)
+
+# Calculate annual IRR. Cash flow is monthly, so annualize it here
+ConstructionIRR2b = (1+np.irr(ConstructionCash2b))**12 - 1
+MezzanineIRR2b = (1+np.irr(MezzanineCash2b))**12 - 1
+EquityIRR2b = (1+np.irr(EquityCash2b))**12 - 1
+
+# Total Profit calculations
+ConstructionTotalProfit2b = ConstructionCash2b.sum()
+MezzanineTotalProfit2b = MezzanineCash2b.sum()
+EquityTotalProfit2b = EquityCash2b.sum()
