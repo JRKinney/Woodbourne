@@ -357,42 +357,10 @@ ConstructionIRR2a = (1+np.irr(ConstructionCash2a))**12 - 1
 MezzanineIRR2a = (1+np.irr(MezzanineCash2a))**12 - 1
 EquityIRR2a = (1+np.irr(EquityCash2a))**12 - 1
 
+# Total Profit calculations
+ConstructionTotalProfit2a = ConstructionCash2a.sum()
+MezzanineTotalProfit2a = MezzanineCash2a.sum()
+EquityTotalProfit2a = EquityCash2a.sum()
 
 
-
-
-# For the period up to the stabilized period, use cash to build the project and pay construction loan. Mezzanine loan
-for i in range(1, LeaseUpLength2b + ConstructionLength2b + 1):
-    # Augment the project cash by the amount spent/gained and the interest paid. In the lease up an construction period,
-    # the only interest paid is on the construction loan
-    ProjectCash2b[i] = ProjectCash2b[i - 1] + CashFlowSchedule2b['CashFlow'][
-        i] - Construction_Amount * Construction_InterestRate / 12
-    # Record the amount of interest accrued by the mezzanine loan but don't pay it yet
-    Mezzanine_InterestedAccrued2b = Mezzanine_InterestedAccrued2b + Mezzanine_Amount * Mezzanine_InterestRate / 12
-    # Give the interest to the construction loaner
-    ConstructionCash2b[i] = Construction_Amount * Construction_InterestRate / 12
-
-# Once this period has completed, the property is stabilized and the construction loan principle will be paid back
-# Excess cash will be used to fund the interest accrued by the mezzanine loan. Excess cash goes to the equity holders
-
-
-
-
-
-
-# In 2a, the sale happens at this point too, so the mezzanine principle gets paid back and all extra cash goes to the
-# equity holder
-i = LeaseUpLength2a + ConstructionLength2a + 1
-# The Mezz debt accrues one more month
-Mezzanine_InterestedAccrued2b = Mezzanine_InterestedAccrued2b + Mezzanine_Amount * Mezzanine_InterestRate / 12
-# Then the project cash receives the sale and final month's income. The construction interest for the last month and the
-#  principle are paid off. The mezz debt accrued interest and principle are paid off.
-ProjectCash2a[i] = ProjectCash2a[i-1]+CashFlowSchedule2a['CashFlow'][i]-(Construction_Amount*Construction_InterestRate/12) - Construction_Amount - (Mezzanine_InterestedAccrued2b + Mezzanine_Amount)
-# If there is enough cash to pay back construction and mezz debt, do so
-if ProjectCash2a[i] > 0:
-    ConstructionCash2a[i] = Construction_Amount*Construction_InterestRate/1 + Construction_Amount
-    MezzanineCash2a[i] = Mezzanine_Amount + Mezzanine_InterestedAccrued2b
-# elif ProjectCash2a[i] > Do this for the bigger losses
-EquityCash2a[i] = ProjectCash2a[i]
-# ProjectCash2a[i] = ProjectCash2a[i] - EquityCash2a
 
